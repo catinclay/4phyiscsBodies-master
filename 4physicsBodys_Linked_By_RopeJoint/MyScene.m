@@ -18,7 +18,20 @@
 @property SKSpriteNode* mySquare6;
 @property SKSpriteNode* mySquare7;
 @property SKSpriteNode* mySquare8;
+
+@property SKShapeNode* dragZone;
+@property SKShapeNode* goalZone;
+
+@property SKLabelNode* dragLabel;
+@property SKLabelNode* arrowLable;
+@property SKLabelNode* scoreLable;
+@property SKLabelNode* prizeLable;
+
+@property int score;
+
+
 @property bool isRelease;
+@property bool mySquare1Gone;
 
 
 
@@ -173,9 +186,72 @@
 //    
     
     
+    _prizeLable = [SKLabelNode labelNodeWithFontNamed:@"Chalkduster"];
+    
+    _prizeLable.text = @"";
+    _prizeLable.fontSize = 40;
+    _prizeLable.position = CGPointMake(CGRectGetMidX(_scoreLable.frame), 80);
+    [self addChild:_prizeLable];
+    [_prizeLable runAction:[SKAction scaleBy:0.2 duration:0.01]];
+    
+    
+}
+
+
+-(void)makeBackground{
+    
+    _dragZone = [[SKShapeNode alloc]init];
+    CGMutablePathRef dragZonePath = CGPathCreateMutable();
+    CGPathAddRect(dragZonePath, NULL, CGRectMake(0, 0, self.size.width*40/200, self.size.height));
+    _dragZone.path = dragZonePath;
+    [_dragZone setFillColor:[UIColor greenColor]];
+    [_dragZone setAlpha:0.1];
+    [_dragZone setPosition: CGPointMake(0, 0)];
+    [self addChild:_dragZone];
+    
+    
+    _goalZone = [[SKShapeNode alloc]init];
+    CGMutablePathRef goalZonePath = CGPathCreateMutable();
+    CGPathAddRect(goalZonePath, NULL, CGRectMake(0, 0, self.size.width*20/200, self.size.width*20/200));
+    _goalZone.path = goalZonePath;
+    [_goalZone setFillColor:[UIColor redColor]];
+    [_goalZone setAlpha:0.5];
+    [_goalZone setPosition: CGPointMake(self.size.width*160/200, self.size.height*70/100)];
+    [self addChild:_goalZone];
     
     
     
+        /* Setup your scene here */
+        
+    
+    _dragLabel = [SKLabelNode labelNodeWithFontNamed:@"Chalkduster"];
+        
+    _dragLabel.text = @"Drag";
+    _dragLabel.fontSize = 14;
+    _dragLabel.position = CGPointMake(50,230);
+    [self addChild: _dragLabel];
+    
+    _arrowLable = [SKLabelNode labelNodeWithFontNamed:@"Chalkduster"];
+    
+    _arrowLable.text = @"▽";
+    _arrowLable.fontSize = 14;
+    _arrowLable.position = CGPointMake(CGRectGetMidX(_dragLabel.frame), 210);
+                            
+    [self addChild: _arrowLable];
+    
+    
+    _scoreLable = [SKLabelNode labelNodeWithFontNamed:@"Chalkduster"];
+
+    _scoreLable.text = @"";
+    _scoreLable.fontSize = 1;
+    _scoreLable.position = CGPointMake(CGRectGetMidX(self.frame), 230);
+    [self addChild: _scoreLable];
+
+    
+    
+    
+
+
 }
 
 -(id)initWithSize:(CGSize)size {
@@ -183,6 +259,8 @@
         /* Setup your scene here */
         
         _isRelease = false;
+        _mySquare1Gone = false;
+        _score = 0;
         
         self.scaleMode = SKSceneScaleModeAspectFit;
 //        self.scaleMode = SKSceneScaleModeResizeFill;
@@ -194,12 +272,15 @@
 //        self.physicsBody = [SKPhysicsBody bodyWithEdgeLoopFromRect:CGRectMake(0, -self.frame.size.width, self.frame.size.height, self.frame.size.width)];
 
 //        self.physicsBody = [SKPhysicsBody bodyWithRectangleOfSize:CGSizeMake(self.frame.size.height, self.frame.size.width)];
+        
+        
+        self.backgroundColor = [SKColor colorWithRed:0.15 green:0.15 blue:0.3 alpha:1.0];
+
         [self.physicsBody setRestitution:0];
         
         
-        
+        [self makeBackground];
         [self spawnSquares];
-        
         [self makeShelf];
         [self activateJointRope];
 
@@ -228,15 +309,23 @@
         
     }
     
+    if (_isRelease == false){
+        _dragLabel.text = @"Release!";
+        _dragLabel.fontSize = 15;
+        _dragLabel.position = CGPointMake(45,230);
+        _arrowLable.hidden = true;
+    }
+    
    
 
 }
 
 -(void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event {
     for (UITouch *touch in touches) {
-        CGPoint location = [touch locationInNode:self];
-        [_mySquare1 setPosition:location];
-        
+        if (_mySquare1Gone == false){
+            CGPoint location = [touch locationInNode:self];
+            [_mySquare1 setPosition:location];
+        }
     }
 }
 
@@ -245,6 +334,9 @@
     if (!_mySquare1.physicsBody.dynamic) {
         [_mySquare1.physicsBody setDynamic:YES];
     }
+    _dragLabel.text = @"PEW!";
+    _dragLabel.fontSize = 20;
+    _dragLabel.position = CGPointMake(50,230);
     _isRelease = TRUE;
 }
 
@@ -256,17 +348,107 @@
     }
 }
 
+-(void)checkGoal{
+    if([self checkInBox:_mySquare1.position]){
+        
+        [self.physicsWorld removeJoint:_myRopeJoint];
+        _mySquare1Gone = true;
+        _mySquare1.hidden = true;
+        _mySquare1.physicsBody = nil;
+        _mySquare1.position = CGPointMake(1000, 1000);
+    }
+    if([self checkInBox:_mySquare2.position]){
+        [self.physicsWorld removeJoint:_myRopeJoint];
+        [self.physicsWorld removeJoint:_myRopeJoint1];
+        _mySquare2.hidden = true;
+        _mySquare2.physicsBody = nil;
+        _mySquare2.position = CGPointMake(1000, 1000);
+
+    }
+    if([self checkInBox:_mySquare3.position]){
+        [self.physicsWorld removeJoint:_myRopeJoint1];
+        [self.physicsWorld removeJoint:_myRopeJoint2];
+        _mySquare3.hidden = true;
+        _mySquare3.physicsBody = nil;
+        _mySquare3.position = CGPointMake(1000, 1000);
+
+    }
+    if([self checkInBox:_mySquare4.position]){
+        [self.physicsWorld removeJoint:_myRopeJoint2];
+        [self.physicsWorld removeJoint:_myRopeJoint3];
+        _mySquare4.hidden = true;
+        _mySquare4.physicsBody = nil;
+        _mySquare4.position = CGPointMake(1000, 1000);
+
+    }
+    if([self checkInBox:_mySquare5.position]){
+        [self.physicsWorld removeJoint:_myRopeJoint3];
+        [self.physicsWorld removeJoint:_myRopeJoint4];
+        _mySquare5.hidden = true;
+        _mySquare5.physicsBody = nil;
+        _mySquare5.position = CGPointMake(1000, 1000);
+
+    }
+    if([self checkInBox:_mySquare6.position]){
+        [self.physicsWorld removeJoint:_myRopeJoint4];
+        [self.physicsWorld removeJoint:_myRopeJoint5];
+        _mySquare6.hidden = true;
+        _mySquare6.physicsBody = nil;
+        _mySquare6.position = CGPointMake(1000, 1000);
+
+    }
+    if([self checkInBox:_mySquare7.position]){
+        [self.physicsWorld removeJoint:_myRopeJoint5];
+        [self.physicsWorld removeJoint:_myRopeJoint6];
+        _mySquare7.hidden = true;
+        _mySquare7.physicsBody = nil;
+        _mySquare7.position = CGPointMake(1000, 1000);
+
+    }
+    if([self checkInBox:_mySquare8.position]){
+        [self.physicsWorld removeJoint:_myRopeJoint6];
+        [self.physicsWorld removeJoint:_myRopeJoint7];
+        _mySquare8.hidden = true;
+        _mySquare8.physicsBody = nil;
+        _mySquare8.position = CGPointMake(1000, 1000);
+
+
+    }
+}
+
+-(bool)checkInBox: (CGPoint)location{
+    if(location.x > _goalZone.position.x && location.x < _goalZone.position.x + _goalZone.frame.size.width
+       && location.y > _goalZone.position.y && location.y < _goalZone.position.y + _goalZone.frame.size.height){
+        [self getScore];
+        return true;
+    }
+    
+    return false;
+}
+
+-(void)getScore{
+    _score++;
+    [_scoreLable setText:[NSString stringWithFormat:@"Score: %d", _score]];
+    _scoreLable.fontSize = 8+_score*5;
+    
+    if(_score == 1){
+        _prizeLable.text = @"You Are Awesome!!";
+        [_prizeLable runAction:[SKAction rotateByAngle: -6.28 duration:0.3]];
+        [_prizeLable runAction:[SKAction scaleBy:4 duration:0.3]];
+    }
+    
+}
 
 -(void)update:(CFTimeInterval)currentTime {
     
     if (_mySquare1.position.x > self.size.width*1/4 && _isRelease == TRUE){
         [self.physicsWorld removeJoint:_myRopeJoint7];
         _myShelf.physicsBody = Nil;
+        [self checkGoal];
     }
-    
-    
     /* Called before each frame is rendered */
 }
+
 
 
 @end
