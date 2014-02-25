@@ -22,10 +22,17 @@
 @property SKShapeNode* dragZone;
 @property SKShapeNode* goalZone;
 
+
+@property SKShapeNode* yourline;
+
 @property SKLabelNode* dragLabel;
 @property SKLabelNode* arrowLable;
+@property SKLabelNode* hitMeLabel;
 @property SKLabelNode* scoreLable;
 @property SKLabelNode* prizeLable;
+
+
+@property CGMutablePathRef pathToDraw;
 
 @property int score;
 
@@ -162,7 +169,7 @@
 }
 
 -(void)makeShelf{
-    _myShelf = [[SKSpriteNode alloc]initWithColor:[SKColor lightGrayColor] size:CGSizeMake(4, 100)];
+    _myShelf = [[SKSpriteNode alloc]initWithColor:[SKColor lightGrayColor] size:CGSizeMake(4, 90)];
     _myShelf.position = CGPointMake(self.size.width*40/200, 50);
     _myShelf.physicsBody = [SKPhysicsBody bodyWithRectangleOfSize:_myShelf.size];
     _myShelf.physicsBody.collisionBitMask = 0x0;
@@ -191,9 +198,36 @@
     _prizeLable.text = @"";
     _prizeLable.fontSize = 40;
     _prizeLable.position = CGPointMake(CGRectGetMidX(_scoreLable.frame), 80);
+    
     [self addChild:_prizeLable];
     [_prizeLable runAction:[SKAction scaleBy:0.2 duration:0.01]];
     
+    
+    CGMutablePathRef pathForFork = CGPathCreateMutable();
+    SKShapeNode *fork = [SKShapeNode node];
+    
+    CGPathMoveToPoint(pathForFork, NULL, self.size.width*43/200,_myShelf.frame.size.height+10);
+    CGPathAddLineToPoint(pathForFork, NULL, CGRectGetMidX(_myShelf.frame), _myShelf.frame.size.height+2);
+    CGPathAddLineToPoint(pathForFork, NULL, self.size.width*37/200,_myShelf.frame.size.height+10);
+    fork.path = pathForFork;
+    [fork setLineWidth:2];
+    [fork setStrokeColor:[SKColor lightGrayColor]];
+    [self addChild:fork];
+
+    
+    _yourline = [SKShapeNode node];
+    _pathToDraw = CGPathCreateMutable();
+    
+    CGPathMoveToPoint(_pathToDraw, NULL, self.size.width*43/200,_myShelf.frame.size.height+10);
+    CGPathAddLineToPoint(_pathToDraw, NULL, _mySquare1.position.x,  _mySquare1.position.y);
+    CGPathAddLineToPoint(_pathToDraw, NULL, self.size.width*37/200,_myShelf.frame.size.height+10);
+    _yourline.path = _pathToDraw;
+    [_yourline setLineWidth:0.5];
+    [_yourline setStrokeColor:[UIColor redColor]];
+    [self addChild:_yourline];
+    
+    
+ 
     
 }
 
@@ -240,6 +274,13 @@
     [self addChild: _arrowLable];
     
     
+    _hitMeLabel  = [SKLabelNode labelNodeWithFontNamed:@"Chalkduster"];
+    
+    _hitMeLabel.text = @"Hit";
+    _hitMeLabel.fontSize = 20;
+    _hitMeLabel.position = CGPointMake(CGRectGetMidX(_goalZone.frame), CGRectGetMidY(_goalZone.frame));
+    [self addChild: _hitMeLabel];
+    
     _scoreLable = [SKLabelNode labelNodeWithFontNamed:@"Chalkduster"];
 
     _scoreLable.text = @"";
@@ -280,8 +321,8 @@
         
         
         [self makeBackground];
-        [self spawnSquares];
         [self makeShelf];
+        [self spawnSquares];
         [self activateJointRope];
 
         
@@ -431,7 +472,7 @@
     [_scoreLable setText:[NSString stringWithFormat:@"Score: %d", _score]];
     _scoreLable.fontSize = 8+_score*5;
     
-    if(_score == 1){
+    if(_score == 8){
         _prizeLable.text = @"You Are Awesome!!";
         [_prizeLable runAction:[SKAction rotateByAngle: -6.28 duration:0.3]];
         [_prizeLable runAction:[SKAction scaleBy:4 duration:0.3]];
@@ -445,6 +486,13 @@
         [self.physicsWorld removeJoint:_myRopeJoint7];
         _myShelf.physicsBody = Nil;
         [self checkGoal];
+        _yourline.hidden = true;
+    }else{
+        _pathToDraw = CGPathCreateMutable();
+        CGPathMoveToPoint(_pathToDraw, NULL, self.size.width*43/200,_myShelf.frame.size.height+10);
+        CGPathAddLineToPoint(_pathToDraw, NULL, _mySquare1.position.x,  _mySquare1.position.y);
+        CGPathAddLineToPoint(_pathToDraw, NULL, self.size.width*37/200,_myShelf.frame.size.height+10);
+        _yourline.path = _pathToDraw;
     }
     /* Called before each frame is rendered */
 }

@@ -26,11 +26,15 @@
 //    skView.showsNodeCount = YES;
     
     // Create and configure the scene.
-    SKScene * scene = [MyScene sceneWithSize:CGSizeMake(skView.bounds.size.height, skView.bounds.size.width) ];
+    MyScene * scene = [MyScene sceneWithSize:CGSizeMake(skView.bounds.size.height, skView.bounds.size.width) ];
     scene.scaleMode = SKSceneScaleModeAspectFill;
+    
     
     // Present the scene.
     [skView presentScene:scene];
+    
+    
+    
 }
 
 - (BOOL)shouldAutorotate
